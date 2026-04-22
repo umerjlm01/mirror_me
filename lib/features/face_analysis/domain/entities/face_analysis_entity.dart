@@ -1,10 +1,13 @@
 import 'dart:io';
 import 'package:equatable/equatable.dart';
+import 'celebrity_match.dart';
 
 class FaceAnalysisEntity extends Equatable {
   final File originalImage;
   final String celebrityName;
   final double celebrityConfidence;
+  final String? celebrityImageUrl;
+  final List<CelebrityMatch> topMatches; // Top 5 matches
   final double overallSymmetry;
   final double eyeSymmetry;
   final double noseSymmetry;
@@ -20,6 +23,8 @@ class FaceAnalysisEntity extends Equatable {
     required this.originalImage,
     required this.celebrityName,
     required this.celebrityConfidence,
+    this.celebrityImageUrl,
+    required this.topMatches,
     required this.overallSymmetry,
     required this.eyeSymmetry,
     required this.noseSymmetry,
@@ -37,6 +42,8 @@ class FaceAnalysisEntity extends Equatable {
         originalImage,
         celebrityName,
         celebrityConfidence,
+        celebrityImageUrl,
+        topMatches,
         overallSymmetry,
         eyeSymmetry,
         noseSymmetry,

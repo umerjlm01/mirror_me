@@ -5,6 +5,8 @@ class FaceAnalysisModel extends FaceAnalysisEntity {
     required super.originalImage,
     required super.celebrityName,
     required super.celebrityConfidence,
+    super.celebrityImageUrl,
+    required super.topMatches,
     required super.overallSymmetry,
     required super.eyeSymmetry,
     required super.noseSymmetry,

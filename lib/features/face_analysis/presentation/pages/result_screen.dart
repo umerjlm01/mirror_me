@@ -12,6 +12,8 @@ import '../bloc/face_analysis_event.dart';
 import '../bloc/face_analysis_state.dart';
 import '../widgets/score_card.dart';
 import '../widgets/custom_button.dart';
+import '../widgets/side_by_side_comparison.dart';
+import '../widgets/top_5_matches_list.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/share_card_generator.dart';
@@ -94,8 +96,25 @@ class _ResultScreenState extends State<ResultScreen>
                       children: [
                         _buildCelebrityHeader(result),
                         const SizedBox(height: 24),
+                        
+                        // Side-by-side comparison
+                        SideBySideComparison(
+                          userImage: result.originalImage,
+                          celebrityName: result.celebrityName,
+                          celebrityImageUrl: result.celebrityImageUrl,
+                          matchScore: result.celebrityConfidence,
+                        ),
+                        const SizedBox(height: 32),
+                        
                         _buildExplanation(result.explanation),
                         const SizedBox(height: 32),
+                        
+                        // Top 5 matches list
+                        if (result.topMatches.isNotEmpty)
+                          Top5MatchesList(matches: result.topMatches),
+                        if (result.topMatches.isNotEmpty)
+                          const SizedBox(height: 32),
+                        
                         ScoreCard(
                           title: 'Overall Symmetry',
                           score: result.overallSymmetry,
@@ -318,6 +337,24 @@ class _ResultScreenState extends State<ResultScreen>
   }
 
   Widget _buildFeatureGrid(Map<String, double> features) {
+    final orderedFeatures = [
+      for (final entry in [
+        MapEntry('eye_spacing', features['eye_spacing']),
+        MapEntry('nose_position', features['nose_position']),
+        MapEntry('mouth_width', features['mouth_width']),
+        MapEntry('face_proportion', features['face_proportion']),
+      ])
+        if (entry.value != null) MapEntry(entry.key, entry.value!),
+      ...features.entries.where(
+        (entry) => !{
+          'eye_spacing',
+          'nose_position',
+          'mouth_width',
+          'face_proportion',
+        }.contains(entry.key),
+      ),
+    ];
+
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -325,7 +362,8 @@ class _ResultScreenState extends State<ResultScreen>
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
       childAspectRatio: 2.5,
-      children: features.entries.map((e) {
+      children: orderedFeatures.map((e) {
+        final score = e.value.clamp(0.0, 1.0);
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
@@ -337,7 +375,7 @@ class _ResultScreenState extends State<ResultScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                e.key.toUpperCase().replaceAll('_', ' '),
+                _formatFeatureLabel(e.key),
                 style: const TextStyle(
                   color: Colors.white38,
                   fontSize: 10,
@@ -349,7 +387,7 @@ class _ResultScreenState extends State<ResultScreen>
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '${(e.value * 100).toStringAsFixed(0)}%',
+                    '${(score * 100).toStringAsFixed(0)}%',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -358,9 +396,9 @@ class _ResultScreenState extends State<ResultScreen>
                   SizedBox(
                     width: 60,
                     child: LinearProgressIndicator(
-                      value: e.value,
+                      value: score,
                       backgroundColor: Colors.white10,
-                      color: AppColors.primary,
+                      color: _getFeatureScoreColor(score),
                       minHeight: 3,
                     ),
                   ),
@@ -371,6 +409,28 @@ class _ResultScreenState extends State<ResultScreen>
         );
       }).toList(),
     );
+  }
+
+  String _formatFeatureLabel(String key) {
+    switch (key) {
+      case 'eye_spacing':
+        return 'EYE SPACING';
+      case 'nose_position':
+        return 'NOSE POSITION';
+      case 'mouth_width':
+        return 'MOUTH WIDTH';
+      case 'face_proportion':
+        return 'FACE PROPORTION';
+      default:
+        return key.toUpperCase().replaceAll('_', ' ');
+    }
+  }
+
+  Color _getFeatureScoreColor(double score) {
+    if (score >= 0.8) return Colors.greenAccent;
+    if (score >= 0.6) return AppColors.primary;
+    if (score >= 0.4) return Colors.orangeAccent;
+    return Colors.redAccent;
   }
 
   Widget _buildPerfectFaceComparison(File left, File right) {

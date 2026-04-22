@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/network/api_service.dart';
+import '../../domain/entities/celebrity_match.dart';
 import '../../domain/entities/face_analysis_entity.dart';
 import '../../domain/repositories/face_analysis_repository.dart';
 import '../datasources/face_local_data_source.dart';
@@ -41,6 +42,10 @@ class FaceAnalysisRepositoryImpl implements FaceAnalysisRepository {
       );
       final perfectFaces = apiResponse['perfect_faces'] ?? {};
       final insightfaceAnalysis = apiResponse['insightface_analysis'] ?? {};
+      
+      // Parse top 5 matches with feature similarity
+      final topMatchesRaw = apiResponse['top_matches'] as List? ?? [];
+      final topMatches = _parseTopMatches(topMatchesRaw);
 
       // Save perfect faces to local files
       final leftFile = await _saveBase64Image(
@@ -57,6 +62,8 @@ class FaceAnalysisRepositoryImpl implements FaceAnalysisRepository {
         celebrityName: celebMatch['name'] ?? 'Unknown',
         celebrityConfidence: (celebMatch['confidence'] as num? ?? 0.0)
             .toDouble(),
+        celebrityImageUrl: celebMatch['image_url'] as String?,
+        topMatches: topMatches,
         overallSymmetry:
             (symmetry['overall_score'] as num? ?? 0.0).toDouble() * 100,
         eyeSymmetry: (symmetry['eye_symmetry'] as num? ?? 0.0).toDouble() * 100,
@@ -82,6 +89,28 @@ class FaceAnalysisRepositoryImpl implements FaceAnalysisRepository {
       }
       return Left(ServerFailure('Error: $errorMsg'));
     }
+  }
+
+  /// Parse top 5 matches from API response into CelebrityMatch objects
+  List<CelebrityMatch> _parseTopMatches(List<dynamic> topMatchesRaw) {
+    return topMatchesRaw.take(5).map((match) {
+      final name = match['name'] as String? ?? 'Unknown';
+      final confidence = (match['confidence'] as num? ?? 0.0).toDouble();
+      final featuresData = match['features'] as Map<String, dynamic>? ?? {};
+      
+      final features = CelebrityFeatures(
+        eyes: (featuresData['eyes'] as num? ?? 60).toInt(),
+        nose: (featuresData['nose'] as num? ?? 60).toInt(),
+        mouth: (featuresData['mouth'] as num? ?? 60).toInt(),
+      );
+
+      return CelebrityMatch(
+        name: name,
+        confidence: confidence,
+        imageUrl: match['image_url'] as String?,
+        features: features,
+      );
+    }).toList();
   }
 
   Future<File?> _saveBase64Image(String base64String, String prefix) async {
