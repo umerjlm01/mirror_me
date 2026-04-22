@@ -1,8 +1,9 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class ApiConstants {
-  // Local FastAPI Backend
-  static const String baseUrl =
-      // 'http://192.168.18.4:8000'; // Replace with your IP for physical devices
-      'http://192.168.1.32:8000';
+  // Use a getter instead of 'static const'
+  static String get baseUrl =>
+      dotenv.env['IP_ADDRESS'] ?? 'http://localhost:8000';
 
   static const String analyzeFaceEndpoint = '/analyze-face';
 }

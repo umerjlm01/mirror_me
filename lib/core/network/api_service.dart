@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import '../constants/api_constants.dart';
@@ -13,15 +14,15 @@ class ApiService {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          print('API Request: ${options.method} ${options.path}');
+          log('API Request: ${options.method} ${options.path}');
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          print('API Response: ${response.statusCode}');
+          log('API Response: ${response.statusCode}');
           return handler.next(response);
         },
         onError: (error, handler) {
-          print('API Error: ${error.type} - ${error.message}');
+          log('API Error: ${error.type} - ${error.message}');
           return handler.next(error);
         },
       ),
@@ -53,7 +54,9 @@ class ApiService {
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout ||
           e.type == DioExceptionType.sendTimeout) {
-        throw Exception('Request timeout. Please check your internet connection.');
+        throw Exception(
+          'Request timeout. Please check your internet connection.',
+        );
       } else if (e.type == DioExceptionType.unknown) {
         throw Exception('Network error: ${e.message}');
       }

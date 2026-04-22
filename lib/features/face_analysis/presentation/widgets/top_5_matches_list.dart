@@ -217,25 +217,25 @@ class _Top5MatchesListState extends State<Top5MatchesList> {
     );
   }
 
-  Widget _buildMiniFeatureStat(String label, int score) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white38, fontSize: 10),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '$score',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: 12,
-          ),
-        ),
-      ],
-    );
-  }
+  // Widget _buildMiniFeatureStat(String label, int score) {
+  //   return Column(
+  //     children: [
+  //       Text(
+  //         label,
+  //         style: const TextStyle(color: Colors.white38, fontSize: 10),
+  //       ),
+  //       const SizedBox(height: 4),
+  //       Text(
+  //         '$score',
+  //         style: const TextStyle(
+  //           color: Colors.white,
+  //           fontWeight: FontWeight.w700,
+  //           fontSize: 12,
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   void _showMatchDetails(
     BuildContext context,
