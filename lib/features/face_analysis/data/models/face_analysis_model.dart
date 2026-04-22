@@ -15,6 +15,12 @@ class FaceAnalysisModel extends FaceAnalysisEntity {
     required super.explanation,
     super.age,
     super.gender,
+    required super.facialHarmony,
+    required super.facialFeatureProfile,
+    required super.archetype,
+    required super.mood,
+    required super.analysisConfidence,
+    required super.alignment,
     super.leftPerfectFace,
     super.rightPerfectFace,
   });

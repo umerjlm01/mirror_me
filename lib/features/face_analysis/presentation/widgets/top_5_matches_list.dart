@@ -6,38 +6,33 @@ import '../../../../core/constants/app_typography.dart';
 class Top5MatchesList extends StatefulWidget {
   final List<CelebrityMatch> matches;
 
-  const Top5MatchesList({
-    super.key,
-    required this.matches,
-  });
+  const Top5MatchesList({super.key, required this.matches});
 
   @override
   State<Top5MatchesList> createState() => _Top5MatchesListState();
 }
 
 class _Top5MatchesListState extends State<Top5MatchesList> {
-  int? _expandedIndex;
-
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.02),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(color: Colors.white10),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: AppColors.primary.withOpacity(0.2),
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Icon(
                     Icons.people,
@@ -46,212 +41,315 @@ class _Top5MatchesListState extends State<Top5MatchesList> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  'Top 5 Celebrity Matches',
-                  style: AppTypography.titleMedium.copyWith(
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Divider
-          Container(
-            height: 1,
-            color: Colors.white10,
-          ),
-
-          // Matches list
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: widget.matches.length,
-            separatorBuilder: (context, index) => Container(
-              height: 1,
-              color: Colors.white.withOpacity(0.05),
-            ),
-            itemBuilder: (context, index) {
-              final match = widget.matches[index];
-              final isExpanded = _expandedIndex == index;
-
-              return _buildMatchItem(match, index, isExpanded);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMatchItem(
-    CelebrityMatch match,
-    int index,
-    bool isExpanded,
-  ) {
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _expandedIndex = isExpanded ? null : index;
-        });
-      },
-      child: Container(
-        color: isExpanded ? AppColors.primary.withOpacity(0.08) : Colors.transparent,
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Main row
-            Row(
-              children: [
-                // Rank badge
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColors.primary.withOpacity(0.6),
-                        AppColors.primary.withOpacity(0.2),
-                      ],
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${index + 1}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(width: 12),
-
-                // Name and score
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        match.name,
-                        style: const TextStyle(
+                        'Top Matches',
+                        style: AppTypography.titleMedium.copyWith(
                           color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          '${match.confidence.toStringAsFixed(0)}% Match',
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                          ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Swipe through your five closest celebrity matches.',
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: Colors.white54,
                         ),
                       ),
                     ],
                   ),
                 ),
-
-                // Score indicator
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _getScoreColor(match.confidence),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    match.confidence.toStringAsFixed(0),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(width: 8),
-
-                // Expand icon
-                Icon(
-                  isExpanded ? Icons.expand_less : Icons.expand_more,
-                  color: AppColors.primary,
-                  size: 20,
-                ),
               ],
             ),
+          ),
+          SizedBox(
+            height: 200,
+            child: ListView.separated(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              scrollDirection: Axis.horizontal,
+              itemCount: widget.matches.length,
+              separatorBuilder: (_, separatorIndex) =>
+                  const SizedBox(width: 12),
+              itemBuilder: (context, index) =>
+                  _buildMatchCard(context, widget.matches[index], index),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-            // Expanded details
-            if (isExpanded) ...[
+  Widget _buildMatchCard(
+    BuildContext context,
+    CelebrityMatch match,
+    int index,
+  ) {
+    return SizedBox(
+      width: 168,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () {
+          _showMatchDetails(context, match, index);
+        },
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white10),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.primary.withOpacity(0.6),
+                          AppColors.primary.withOpacity(0.2),
+                        ],
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${index + 1}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${match.confidence.toStringAsFixed(0)}%',
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              Text(
+                match.name,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Best match: ${match.features.topFeature}',
+                style: const TextStyle(color: Colors.white54, fontSize: 11),
+              ),
               const SizedBox(height: 12),
-              _buildFeatureDetails(match),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  value: (match.confidence / 100).clamp(0.0, 1.0),
+                  minHeight: 6,
+                  backgroundColor: Colors.white10,
+                  color: _getScoreColor(match.confidence),
+                ),
+              ),
+              // const SizedBox(height: 12),
+              // Row(
+              //   children: [
+              //     Expanded(
+              //       child: _buildMiniFeatureStat('Eyes', match.features.eyes),
+              //     ),
+              //     const SizedBox(width: 8),
+              //     Expanded(
+              //       child: _buildMiniFeatureStat('Nose', match.features.nose),
+              //     ),
+              //     const SizedBox(width: 8),
+              //     Expanded(
+              //       child: _buildMiniFeatureStat('Mouth', match.features.mouth),
+              //     ),
+              //   ],
+              // ),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.open_in_full,
+                      color: AppColors.primary,
+                      size: 14,
+                    ),
+                    SizedBox(width: 6),
+                    Text(
+                      'Tap for details',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildFeatureDetails(CelebrityMatch match) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
-        borderRadius: BorderRadius.circular(8),
+  Widget _buildMiniFeatureStat(String label, int score) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white38, fontSize: 10),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '$score',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showMatchDetails(
+    BuildContext context,
+    CelebrityMatch match,
+    int index,
+  ) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF111111),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Feature Similarity',
-            style: TextStyle(
-              color: Colors.white54,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 42,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 18),
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+                Row(
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.primary.withOpacity(0.15),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '${index + 1}',
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            match.name,
+                            style: AppTypography.titleMedium.copyWith(
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            '${match.confidence.toStringAsFixed(0)}% overall similarity',
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.04),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Feature Similarity',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      _buildFeatureBar(
+                        'Eyes',
+                        match.features.eyes,
+                        Icons.remove_red_eye_outlined,
+                      ),
+                      const SizedBox(height: 10),
+                      _buildFeatureBar(
+                        'Nose',
+                        match.features.nose,
+                        Icons.face_retouching_natural,
+                      ),
+                      const SizedBox(height: 10),
+                      _buildFeatureBar(
+                        'Mouth',
+                        match.features.mouth,
+                        Icons.sentiment_satisfied_alt,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-
-          // Eyes
-          _buildFeatureBar(
-            'Eyes',
-            match.features.eyes,
-            Icons.remove_red_eye_outlined,
-          ),
-          const SizedBox(height: 8),
-
-          // Nose
-          _buildFeatureBar(
-            'Nose',
-            match.features.nose,
-            Icons.emoji_nature,
-          ),
-          const SizedBox(height: 8),
-
-          // Mouth
-          _buildFeatureBar(
-            'Mouth',
-            match.features.mouth,
-            Icons.sentiment_satisfied_alt,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -270,10 +368,7 @@ class _Top5MatchesListState extends State<Top5MatchesList> {
                 children: [
                   Text(
                     label,
-                    style: const TextStyle(
-                      color: Colors.white54,
-                      fontSize: 10,
-                    ),
+                    style: const TextStyle(color: Colors.white54, fontSize: 10),
                   ),
                   Text(
                     '$score%',
