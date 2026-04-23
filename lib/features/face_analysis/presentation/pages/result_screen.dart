@@ -8,7 +8,6 @@ import '../bloc/face_analysis_bloc.dart';
 import '../bloc/face_analysis_event.dart';
 import '../bloc/face_analysis_state.dart';
 import '../widgets/custom_button.dart';
-import '../widgets/top_5_matches_list.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/share_card_generator.dart';
@@ -89,16 +88,13 @@ class _ResultScreenState extends State<ResultScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildHeroSection(result),
+                        _buildGroomingSuggestionsCard(result),
+                        const SizedBox(height: 24),
+                        _buildStyleRecommendationsCard(result),
                         const SizedBox(height: 24),
                         _buildFaceInsightsSection(result),
                         const SizedBox(height: 24),
                         _buildPersonalProfileSection(result),
-                        const SizedBox(height: 24),
-                        if (result.topMatches.isNotEmpty)
-                          Top5MatchesList(matches: result.topMatches),
-                        if (result.topMatches.isNotEmpty)
-                          const SizedBox(height: 32),
                         const SizedBox(height: 40),
                         if (_isGeneratingCard)
                           const Center(
@@ -144,167 +140,182 @@ class _ResultScreenState extends State<ResultScreen>
     );
   }
 
-  Widget _buildHeroSection(FaceAnalysisEntity result) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.primary.withOpacity(0.18),
-            const Color(0xFF1A1A1A),
-            Colors.black,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppColors.primary.withOpacity(0.24)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
-            blurRadius: 28,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
+  Widget _buildGroomingSuggestionsCard(FaceAnalysisEntity result) {
+    return _buildSectionCard(
+      title: 'Grooming Suggestions',
+      icon: Icons.recommend_rounded,
+      subtitle: 'Personalized tips to enhance your appearance',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Celebrity Match',
-            style: AppTypography.labelLarge.copyWith(
-              color: AppColors.primary,
-              letterSpacing: 1.1,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: _buildHeroImageCard(
-                  label: 'You',
-                  child: Image.file(result.originalImage, fit: BoxFit.cover),
-                ),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.2),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Column(
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
                     Container(
-                      width: 56,
-                      height: 56,
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.primary.withOpacity(0.12),
-                        border: Border.all(
-                          color: AppColors.primary,
-                          width: 1.6,
-                        ),
+                        color: AppColors.primary.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        '${result.celebrityConfidence.toStringAsFixed(0)}%',
-                        style: const TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13,
-                        ),
+                      child: Icon(
+                        Icons.face_retouching_natural,
+                        color: AppColors.primary,
+                        size: 18,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'MATCH',
-                      style: TextStyle(
-                        color: Colors.white38,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Face Shape: ${result.faceShape}',
+                            style: AppTypography.titleMedium.copyWith(
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Jawline Strength: ${result.jawlineStrength}/100',
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
-              Expanded(
-                child: _buildHeroImageCard(
-                  label: result.celebrityName,
-                  child:
-                      result.celebrityImageUrl != null &&
-                          result.celebrityImageUrl!.isNotEmpty
-                      ? Image.network(
-                          result.celebrityImageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              _buildCelebrityFallback(result.celebrityName),
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return const Center(
-                              child: CircularProgressIndicator(
-                                color: AppColors.primary,
-                              ),
-                            );
-                          },
-                        )
-                      : _buildCelebrityFallback(result.celebrityName),
-                ),
-              ),
-            ],
+                const SizedBox(height: 12),
+                ...result.groomingTips.asMap().entries.map((entry) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            '${entry.key + 1}',
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            entry.value,
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: Colors.white70,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
-          Text(
-            result.celebrityName,
-            style: AppTypography.headlineLarge.copyWith(color: Colors.white),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '${result.celebrityConfidence.toStringAsFixed(1)}% similarity match',
-            style: AppTypography.titleMedium.copyWith(color: AppColors.primary),
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _buildInfoChip(
-                Icons.verified_outlined,
-                'Reliability ${result.analysisConfidence.matchReliability}%',
-              ),
-              if (result.age != null)
-                _buildInfoChip(Icons.cake_outlined, 'Age ${result.age}'),
-              if (result.gender != null)
-                _buildInfoChip(
-                  result.gender == 'Male' ? Icons.male : Icons.female,
-                  result.gender!,
-                ),
-            ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStyleRecommendationsCard(FaceAnalysisEntity result) {
+    return _buildSectionCard(
+      title: 'Style Recommendations',
+      icon: Icons.style_rounded,
+      subtitle: 'Hair, beard, and accessory suggestions for you',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildStyleRecommendationRow(
+            icon: Icons.content_cut_rounded,
+            title: 'Hair',
+            recommendation: result.styleRecommendations.hair,
           ),
           const SizedBox(height: 16),
+          _buildStyleRecommendationRow(
+            icon: Icons.face_rounded,
+            title: 'Beard',
+            recommendation: result.styleRecommendations.beard,
+          ),
+          const SizedBox(height: 16),
+          _buildStyleRecommendationRow(
+            icon: Icons.remove_red_eye_rounded,
+            title: 'Glasses',
+            recommendation: result.styleRecommendations.glasses,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStyleRecommendationRow({
+    required IconData icon,
+    required String title,
+    required String recommendation,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white10),
+              color: AppColors.primary.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
             ),
-            child: Row(
+            child: Icon(icon, color: AppColors.primary, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
-                  Icons.auto_awesome,
-                  color: AppColors.primary,
-                  size: 18,
+                Text(
+                  title,
+                  style: AppTypography.labelLarge.copyWith(color: Colors.white),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    result.explanation,
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: Colors.white70,
-                      height: 1.45,
-                    ),
+                const SizedBox(height: 4),
+                Text(
+                  recommendation,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: Colors.white70,
+                    height: 1.4,
+                    fontSize: 12,
                   ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -314,68 +325,43 @@ class _ResultScreenState extends State<ResultScreen>
     );
   }
 
-  Widget _buildHeroImageCard({required String label, required Widget child}) {
-    return Column(
-      children: [
-        AspectRatio(
-          aspectRatio: 0.78,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: AppColors.primary.withOpacity(0.22),
-                width: 1.5,
-              ),
-              color: Colors.white.withOpacity(0.04),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: child,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          label,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.white70,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
+  // Removed _buildHeroSection - Using grooming suggestions cards instead
 
-  Widget _buildCelebrityFallback(String name) {
-    return Container(
-      color: Colors.white.withOpacity(0.03),
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.person,
-                size: 52,
-                color: AppColors.primary.withOpacity(0.5),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                name,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white54, fontSize: 11),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  // Widget _buildHeroImageCard({required String label, required Widget child}) {
+  //   return Column(
+  //     children: [
+  //       AspectRatio(
+  //         aspectRatio: 0.78,
+  //         child: Container(
+  //           decoration: BoxDecoration(
+  //             borderRadius: BorderRadius.circular(20),
+  //             border: Border.all(
+  //               color: AppColors.primary.withValues(alpha: 0.22),
+  //               width: 1.5,
+  //             ),
+  //             color: Colors.white.withValues(alpha: 0.04),
+  //           ),
+  //           clipBehavior: Clip.antiAlias,
+  //           child: child,
+  //         ),
+  //       ),
+  //       const SizedBox(height: 10),
+  //       Text(
+  //         label,
+  //         maxLines: 2,
+  //         overflow: TextOverflow.ellipsis,
+  //         textAlign: TextAlign.center,
+  //         style: const TextStyle(
+  //           color: Colors.white70,
+  //           fontSize: 12,
+  //           fontWeight: FontWeight.w600,
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
+
+  // Removed _buildCelebrityFallback - Using grooming cards instead
 
   Widget _buildFaceInsightsSection(FaceAnalysisEntity result) {
     final goldenRatioScore =
@@ -430,8 +416,9 @@ class _ResultScreenState extends State<ResultScreen>
           _buildSubsectionLabel('Geometric Scores'),
           const SizedBox(height: 12),
           _buildGeometricScoreWrap(result.featureScores),
-          if (result.leftPerfectFace != null &&
-              result.rightPerfectFace != null) ...[
+          if (result.alignedFace != null ||
+              (result.leftPerfectFace != null &&
+                  result.rightPerfectFace != null)) ...[
             const SizedBox(height: 16),
             Theme(
               data: Theme.of(
@@ -450,14 +437,15 @@ class _ResultScreenState extends State<ResultScreen>
                   ),
                 ),
                 subtitle: const Text(
-                  'Compare left-perfect and right-perfect renderings',
+                  'See the aligned crop and the mirrored left/right renderings',
                   style: TextStyle(color: Colors.white54, fontSize: 12),
                 ),
                 children: [
                   const SizedBox(height: 12),
-                  _buildPerfectFaceComparison(
-                    result.leftPerfectFace!,
-                    result.rightPerfectFace!,
+                  _buildSymmetryVisualization(
+                    alignedFace: result.alignedFace,
+                    leftPerfectFace: result.leftPerfectFace,
+                    rightPerfectFace: result.rightPerfectFace,
                   ),
                 ],
               ),
@@ -512,7 +500,7 @@ class _ResultScreenState extends State<ResultScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.04),
+        color: Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: Colors.white10),
       ),
@@ -524,7 +512,7 @@ class _ResultScreenState extends State<ResultScreen>
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.12),
+                  color: AppColors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(icon, color: AppColors.primary, size: 18),
@@ -559,30 +547,30 @@ class _ResultScreenState extends State<ResultScreen>
     );
   }
 
-  Widget _buildInfoChip(IconData icon, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: AppColors.primary),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildInfoChip(IconData icon, String label) {
+  //   return Container(
+  //     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+  //     decoration: BoxDecoration(
+  //       color: Colors.white.withValues(alpha: 0.08),
+  //       borderRadius: BorderRadius.circular(999),
+  //     ),
+  //     child: Row(
+  //       mainAxisSize: MainAxisSize.min,
+  //       children: [
+  //         Icon(icon, size: 14, color: AppColors.primary),
+  //         const SizedBox(width: 6),
+  //         Text(
+  //           label,
+  //           style: const TextStyle(
+  //             color: Colors.white70,
+  //             fontSize: 11,
+  //             fontWeight: FontWeight.w700,
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildMetricPill({
     required IconData icon,
@@ -592,7 +580,7 @@ class _ResultScreenState extends State<ResultScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.white10),
       ),
@@ -630,7 +618,7 @@ class _ResultScreenState extends State<ResultScreen>
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.04),
+        color: Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -722,7 +710,7 @@ class _ResultScreenState extends State<ResultScreen>
         return Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
@@ -794,7 +782,7 @@ class _ResultScreenState extends State<ResultScreen>
           width: 150,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.04),
+            color: Colors.white.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: Colors.white10),
           ),
@@ -844,7 +832,7 @@ class _ResultScreenState extends State<ResultScreen>
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -853,7 +841,7 @@ class _ResultScreenState extends State<ResultScreen>
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.12),
+              color: AppColors.primary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: AppColors.primary, size: 18),
@@ -941,50 +929,199 @@ class _ResultScreenState extends State<ResultScreen>
     return Colors.redAccent;
   }
 
-  Widget _buildPerfectFaceComparison(File left, File right) {
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Image.file(
-                  left,
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
+  Widget _buildSymmetryVisualization({
+    File? alignedFace,
+    File? leftPerfectFace,
+    File? rightPerfectFace,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.035),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: const [
+              _SymmetryStepChip(
+                step: '01',
+                label: 'Face aligned',
+                icon: Icons.center_focus_strong,
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Left-Perfect',
-                style: TextStyle(color: Colors.white38, fontSize: 12),
+              _SymmetryStepChip(
+                step: '02',
+                label: 'Axis detected',
+                icon: Icons.swap_horiz,
+              ),
+              _SymmetryStepChip(
+                step: '03',
+                label: 'Halves mirrored',
+                icon: Icons.auto_fix_high,
               ),
             ],
+          ),
+          if (alignedFace != null) ...[
+            const SizedBox(height: 16),
+            _buildAlignedFacePreview(alignedFace),
+          ],
+          if (alignedFace != null &&
+              leftPerfectFace != null &&
+              rightPerfectFace != null) ...[
+            const SizedBox(height: 14),
+            _buildSymmetryConnector(),
+          ],
+          if (leftPerfectFace != null && rightPerfectFace != null) ...[
+            const SizedBox(height: 14),
+            _buildPerfectFaceComparison(leftPerfectFace, rightPerfectFace),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPerfectFaceComparison(File left, File right) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: _buildSymmetryFaceCard(
+            title: 'Left-Perfect',
+            subtitle: 'Left half mirrored into full symmetry',
+            accent: const Color(0xFF7EE7C7),
+            imageFile: left,
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Column(
+          child: _buildSymmetryFaceCard(
+            title: 'Right-Perfect',
+            subtitle: 'Right half mirrored into full symmetry',
+            accent: const Color(0xFFFFC978),
+            imageFile: right,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAlignedFacePreview(File alignedFace) {
+    return _buildSymmetryFaceCard(
+      title: 'Aligned Face Reference',
+      subtitle: 'Backend-corrected crop used before the symmetry split',
+      accent: AppColors.primary,
+      imageFile: alignedFace,
+      height: 220,
+      fullWidth: true,
+    );
+  }
+
+  Widget _buildSymmetryFaceCard({
+    required String title,
+    required String subtitle,
+    required Color accent,
+    required File imageFile,
+    double height = 200,
+    bool fullWidth = false,
+  }) {
+    return Container(
+      width: fullWidth ? double.infinity : null,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Image.file(
-                  right,
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: accent,
+                  shape: BoxShape.circle,
                 ),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Right-Perfect',
-                style: TextStyle(color: Colors.white38, fontSize: 12),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: const TextStyle(color: Colors.white54, fontSize: 11),
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              width: double.infinity,
+              color: Colors.white.withValues(alpha: 0.03),
+              child: Image.file(
+                imageFile,
+                height: height,
+                width: double.infinity,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSymmetryConnector() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: Container(height: 1, color: Colors.white12)),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.25),
+            ),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.arrow_downward_rounded,
+                color: AppColors.primary,
+                size: 14,
+              ),
+              SizedBox(width: 6),
+              Text(
+                'Mirrored outputs',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
         ),
+        Expanded(child: Container(height: 1, color: Colors.white12)),
       ],
     );
   }
@@ -998,9 +1135,8 @@ class _ResultScreenState extends State<ResultScreen>
       await ShareCardGenerator.sharePremiumCard(
         context: context,
         originalImage: result.originalImage,
-        celebrityName: result.celebrityName,
-        celebrityImageUrl: result.celebrityImageUrl,
-        celebrityConfidence: result.celebrityConfidence,
+        faceShape: result.faceShape,
+        jawlineStrength: result.jawlineStrength,
         facialHarmony: result.facialHarmony.score,
         mood: result.mood.type,
         moodConfidence: result.mood.confidence,
@@ -1024,4 +1160,59 @@ class _FeatureTileData {
     required this.score,
     required this.icon,
   });
+}
+
+class _SymmetryStepChip extends StatelessWidget {
+  final String step;
+  final String label;
+  final IconData icon;
+
+  const _SymmetryStepChip({
+    required this.step,
+    required this.label,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              step,
+              style: const TextStyle(
+                color: AppColors.primary,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Icon(icon, size: 14, color: AppColors.primary),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

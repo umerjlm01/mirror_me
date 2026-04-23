@@ -1,13 +1,15 @@
 import 'dart:io';
 import 'package:equatable/equatable.dart';
-import 'celebrity_match.dart';
 
 class FaceAnalysisEntity extends Equatable {
   final File originalImage;
-  final String celebrityName;
-  final double celebrityConfidence;
-  final String? celebrityImageUrl;
-  final List<CelebrityMatch> topMatches; // Top 5 matches
+  // Grooming-focused fields
+  final String faceShape;
+  final int jawlineStrength;
+  final FaceProportions faceProportions;
+  final List<String> groomingTips;
+  final StyleRecommendations styleRecommendations;
+  // Original analysis fields (kept for insights)
   final double overallSymmetry;
   final double eyeSymmetry;
   final double noseSymmetry;
@@ -22,15 +24,17 @@ class FaceAnalysisEntity extends Equatable {
   final MoodAnalysis mood;
   final AnalysisConfidence analysisConfidence;
   final FaceAlignment alignment;
+  final File? alignedFace;
   final File? leftPerfectFace;
   final File? rightPerfectFace;
 
   const FaceAnalysisEntity({
     required this.originalImage,
-    required this.celebrityName,
-    required this.celebrityConfidence,
-    this.celebrityImageUrl,
-    required this.topMatches,
+    required this.faceShape,
+    required this.jawlineStrength,
+    required this.faceProportions,
+    required this.groomingTips,
+    required this.styleRecommendations,
     required this.overallSymmetry,
     required this.eyeSymmetry,
     required this.noseSymmetry,
@@ -45,6 +49,7 @@ class FaceAnalysisEntity extends Equatable {
     required this.mood,
     required this.analysisConfidence,
     required this.alignment,
+    this.alignedFace,
     this.leftPerfectFace,
     this.rightPerfectFace,
   });
@@ -52,10 +57,11 @@ class FaceAnalysisEntity extends Equatable {
   @override
   List<Object?> get props => [
     originalImage,
-    celebrityName,
-    celebrityConfidence,
-    celebrityImageUrl,
-    topMatches,
+    faceShape,
+    jawlineStrength,
+    faceProportions,
+    groomingTips,
+    styleRecommendations,
     overallSymmetry,
     eyeSymmetry,
     noseSymmetry,
@@ -70,6 +76,7 @@ class FaceAnalysisEntity extends Equatable {
     mood,
     analysisConfidence,
     alignment,
+    alignedFace,
     leftPerfectFace,
     rightPerfectFace,
   ];
@@ -174,4 +181,32 @@ class FaceAlignment extends Equatable {
 
   @override
   List<Object?> get props => [eyesHorizontal, rotationDegrees, scaleScore];
+}
+
+class FaceProportions extends Equatable {
+  final double widthHeightRatio;
+  final String assessment;
+
+  const FaceProportions({
+    required this.widthHeightRatio,
+    required this.assessment,
+  });
+
+  @override
+  List<Object?> get props => [widthHeightRatio, assessment];
+}
+
+class StyleRecommendations extends Equatable {
+  final String hair;
+  final String beard;
+  final String glasses;
+
+  const StyleRecommendations({
+    required this.hair,
+    required this.beard,
+    required this.glasses,
+  });
+
+  @override
+  List<Object?> get props => [hair, beard, glasses];
 }

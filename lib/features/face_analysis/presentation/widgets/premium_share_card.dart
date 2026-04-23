@@ -7,9 +7,8 @@ import '../../../../core/constants/share_card_theme.dart';
 
 class PremiumShareCard extends StatelessWidget {
   final File userImage;
-  final String celebrityName;
-  final String? celebrityImageUrl;
-  final double matchScore;
+  final String faceShape;
+  final int jawlineStrength;
   final int facialHarmony;
   final String mood;
   final int moodConfidence;
@@ -18,9 +17,8 @@ class PremiumShareCard extends StatelessWidget {
   const PremiumShareCard({
     super.key,
     required this.userImage,
-    required this.celebrityName,
-    this.celebrityImageUrl,
-    required this.matchScore,
+    required this.faceShape,
+    required this.jawlineStrength,
     required this.facialHarmony,
     required this.mood,
     required this.moodConfidence,
@@ -70,13 +68,9 @@ class PremiumShareCard extends StatelessWidget {
                               ),
                               Expanded(
                                 child: _FaceSpotlight(
-                                  title: celebrityName,
-                                  image:
-                                      celebrityImageUrl != null &&
-                                          celebrityImageUrl!.isNotEmpty
-                                      ? NetworkImage(celebrityImageUrl!)
-                                      : null,
-                                  badge: '${matchScore.toStringAsFixed(0)}%',
+                                  title: faceShape,
+                                  image: null,
+                                  badge: '${jawlineStrength}%',
                                 ),
                               ),
                             ],
@@ -96,7 +90,7 @@ class PremiumShareCard extends StatelessWidget {
                               ),
                             ),
                             child: Text(
-                              'Top match ${matchScore.toStringAsFixed(0)}% similarity',
+                              'Jawline Strength: $jawlineStrength/100',
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 color: ShareCardTheme.textSecondary,
@@ -115,7 +109,7 @@ class PremiumShareCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'You resemble',
+                            'Your Face Shape',
                             style: TextStyle(
                               color: ShareCardTheme.textSecondary.withValues(
                                 alpha: 0.9,
@@ -134,14 +128,14 @@ class PremiumShareCard extends StatelessWidget {
                                 height: 1.1,
                               ),
                               children: [
-                                TextSpan(text: celebrityName),
-                                const TextSpan(text: ' 😳'),
+                                TextSpan(text: faceShape),
+                                const TextSpan(text: ' ✨'),
                               ],
                             ),
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            'MirrorMe thinks your strongest resemblance lands in a polished, camera-ready range. 🔥',
+                            'MirrorMe analyzed your face shape and provided personalized grooming recommendations just for you! 💪',
                             style: TextStyle(
                               color: ShareCardTheme.textSecondary.withValues(
                                 alpha: 0.95,

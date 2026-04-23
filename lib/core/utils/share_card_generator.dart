@@ -15,19 +15,14 @@ class ShareCardGenerator {
   static Future<File> generateAndSavePremiumCard({
     required BuildContext context,
     required File originalImage,
-    required String celebrityName,
-    String? celebrityImageUrl,
-    required double celebrityConfidence,
+    required String faceShape,
+    required int jawlineStrength,
     required int facialHarmony,
     required String mood,
     required int moodConfidence,
     required String archetype,
   }) async {
-    await _precacheAssets(
-      context: context,
-      originalImage: originalImage,
-      celebrityImageUrl: celebrityImageUrl,
-    );
+    await _precacheAssets(context: context, originalImage: originalImage);
     if (!context.mounted) {
       throw StateError('Share card context was disposed before capture.');
     }
@@ -47,9 +42,8 @@ class ShareCardGenerator {
               key: boundaryKey,
               child: PremiumShareCard(
                 userImage: originalImage,
-                celebrityName: celebrityName,
-                celebrityImageUrl: celebrityImageUrl,
-                matchScore: celebrityConfidence,
+                faceShape: faceShape,
+                jawlineStrength: jawlineStrength,
                 facialHarmony: facialHarmony,
                 mood: mood,
                 moodConfidence: moodConfidence,
@@ -89,9 +83,8 @@ class ShareCardGenerator {
   static Future<void> sharePremiumCard({
     required BuildContext context,
     required File originalImage,
-    required String celebrityName,
-    String? celebrityImageUrl,
-    required double celebrityConfidence,
+    required String faceShape,
+    required int jawlineStrength,
     required int facialHarmony,
     required String mood,
     required int moodConfidence,
@@ -100,9 +93,8 @@ class ShareCardGenerator {
     final file = await generateAndSavePremiumCard(
       context: context,
       originalImage: originalImage,
-      celebrityName: celebrityName,
-      celebrityImageUrl: celebrityImageUrl,
-      celebrityConfidence: celebrityConfidence,
+      faceShape: faceShape,
+      jawlineStrength: jawlineStrength,
       facialHarmony: facialHarmony,
       mood: mood,
       moodConfidence: moodConfidence,
@@ -115,7 +107,8 @@ class ShareCardGenerator {
     await SharePlus.instance.share(
       ShareParams(
         files: [XFile(file.path)],
-        text: 'You resemble $celebrityName 😳 What do you think?',
+        text:
+            'Just analyzed my grooming profile with MirrorMe! Face shape: $faceShape, Jawline: $jawlineStrength/100 💪',
       ),
     );
   }
@@ -123,19 +116,8 @@ class ShareCardGenerator {
   static Future<void> _precacheAssets({
     required BuildContext context,
     required File originalImage,
-    String? celebrityImageUrl,
   }) async {
     await precacheImage(FileImage(originalImage), context);
-    if (!context.mounted) {
-      return;
-    }
-    if (celebrityImageUrl != null && celebrityImageUrl.isNotEmpty) {
-      try {
-        await precacheImage(NetworkImage(celebrityImageUrl), context);
-      } catch (_) {
-        // Ignore and fall back to placeholder in the card.
-      }
-    }
   }
 
   static Future<File> _saveBytes(Uint8List bytes) async {

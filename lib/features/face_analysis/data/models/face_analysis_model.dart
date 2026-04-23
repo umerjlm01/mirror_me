@@ -3,10 +3,11 @@ import '../../domain/entities/face_analysis_entity.dart';
 class FaceAnalysisModel extends FaceAnalysisEntity {
   const FaceAnalysisModel({
     required super.originalImage,
-    required super.celebrityName,
-    required super.celebrityConfidence,
-    super.celebrityImageUrl,
-    required super.topMatches,
+    required super.faceShape,
+    required super.jawlineStrength,
+    required super.faceProportions,
+    required super.groomingTips,
+    required super.styleRecommendations,
     required super.overallSymmetry,
     required super.eyeSymmetry,
     required super.noseSymmetry,
@@ -21,6 +22,7 @@ class FaceAnalysisModel extends FaceAnalysisEntity {
     required super.mood,
     required super.analysisConfidence,
     required super.alignment,
+    super.alignedFace,
     super.leftPerfectFace,
     super.rightPerfectFace,
   });
