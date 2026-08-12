@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:equatable/equatable.dart';
+import '../../domain/entities/user_intent_entity.dart';
 
 abstract class FaceAnalysisEvent extends Equatable {
   const FaceAnalysisEvent();
@@ -13,12 +14,13 @@ class UploadImageEvent extends FaceAnalysisEvent {}
 class CaptureImageEvent extends FaceAnalysisEvent {}
 
 class AnalyzeFaceEvent extends FaceAnalysisEvent {
-  final File imageFile;
+  final List<File> imageFiles;
+  final UserIntentEntity userIntent;
 
-  const AnalyzeFaceEvent(this.imageFile);
+  const AnalyzeFaceEvent(this.imageFiles, this.userIntent);
 
   @override
-  List<Object?> get props => [imageFile];
+  List<Object?> get props => [imageFiles, userIntent];
 }
 
 class ResetEvent extends FaceAnalysisEvent {}

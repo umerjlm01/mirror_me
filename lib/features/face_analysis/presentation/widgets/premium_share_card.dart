@@ -70,7 +70,7 @@ class PremiumShareCard extends StatelessWidget {
                                 child: _FaceSpotlight(
                                   title: faceShape,
                                   image: null,
-                                  badge: '${jawlineStrength}%',
+                                  badge: '$jawlineStrength%',
                                 ),
                               ),
                             ],

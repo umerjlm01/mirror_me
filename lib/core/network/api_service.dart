@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import '../constants/api_constants.dart';
+import '../../features/face_analysis/domain/entities/user_intent_entity.dart';
 
 class ApiService {
   final Dio dio;
@@ -30,15 +31,29 @@ class ApiService {
   }
 
   /// POST /analyze-face
-  /// Returns unified AI face intelligence data.
-  Future<Map<String, dynamic>> analyzeFace(File image) async {
+  /// Returns unified AI face intelligence data from at least 3 images.
+  Future<Map<String, dynamic>> analyzeFace(
+    List<File> images,
+    UserIntentEntity userIntent,
+  ) async {
     try {
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(
-          image.path,
-          filename: image.path.split('/').last,
-        ),
-      });
+      final formData = FormData();
+      for (final image in images) {
+        formData.files.add(
+          MapEntry(
+            'files',
+            await MultipartFile.fromFile(
+              image.path,
+              filename: image.path.split('/').last,
+            ),
+          ),
+        );
+      }
+      formData.fields.addAll([
+        MapEntry('goal', userIntent.goal),
+        MapEntry('preference', userIntent.preference),
+        MapEntry('glasses', userIntent.glasses),
+      ]);
 
       final response = await dio.post(
         '${ApiConstants.baseUrl}${ApiConstants.analyzeFaceEndpoint}',

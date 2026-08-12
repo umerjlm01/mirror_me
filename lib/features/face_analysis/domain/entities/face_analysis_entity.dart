@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:equatable/equatable.dart';
+import 'user_intent_entity.dart';
 
 class FaceAnalysisEntity extends Equatable {
   final File originalImage;
@@ -24,6 +25,9 @@ class FaceAnalysisEntity extends Equatable {
   final MoodAnalysis mood;
   final AnalysisConfidence analysisConfidence;
   final FaceAlignment alignment;
+  final AnalysisQuality analysisQuality;
+  final UserIntentEntity userIntent;
+  final List<String> intentFeedback;
   final File? alignedFace;
   final File? leftPerfectFace;
   final File? rightPerfectFace;
@@ -49,6 +53,9 @@ class FaceAnalysisEntity extends Equatable {
     required this.mood,
     required this.analysisConfidence,
     required this.alignment,
+    required this.analysisQuality,
+    required this.userIntent,
+    required this.intentFeedback,
     this.alignedFace,
     this.leftPerfectFace,
     this.rightPerfectFace,
@@ -76,10 +83,23 @@ class FaceAnalysisEntity extends Equatable {
     mood,
     analysisConfidence,
     alignment,
+    analysisQuality,
+    userIntent,
+    intentFeedback,
     alignedFace,
     leftPerfectFace,
     rightPerfectFace,
   ];
+}
+
+class AnalysisQuality extends Equatable {
+  final int imageCount;
+  final int confidence;
+
+  const AnalysisQuality({required this.imageCount, required this.confidence});
+
+  @override
+  List<Object?> get props => [imageCount, confidence];
 }
 
 class FacialHarmony extends Equatable {

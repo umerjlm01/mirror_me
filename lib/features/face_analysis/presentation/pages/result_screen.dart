@@ -90,6 +90,10 @@ class _ResultScreenState extends State<ResultScreen>
                       children: [
                         _buildGroomingSuggestionsCard(result),
                         const SizedBox(height: 24),
+                        _buildGoalAlignmentSection(result),
+                        const SizedBox(height: 24),
+                        _buildAnalysisQualitySection(result),
+                        const SizedBox(height: 24),
                         _buildStyleRecommendationsCard(result),
                         const SizedBox(height: 24),
                         _buildFaceInsightsSection(result),
@@ -235,7 +239,7 @@ class _ResultScreenState extends State<ResultScreen>
                       ],
                     ),
                   );
-                }).toList(),
+                }),
               ],
             ),
           ),
@@ -268,6 +272,98 @@ class _ResultScreenState extends State<ResultScreen>
             icon: Icons.remove_red_eye_rounded,
             title: 'Glasses',
             recommendation: result.styleRecommendations.glasses,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGoalAlignmentSection(FaceAnalysisEntity result) {
+    return _buildSectionCard(
+      title: 'Based On Your Goals',
+      icon: Icons.flag_circle_outlined,
+      subtitle: 'Intent-aware coaching aligned to your selected preferences.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.white10),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Goal: ${result.userIntent.goal}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Preference: ${result.userIntent.preference} • Glasses: ${result.userIntent.glasses}',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...result.intentFeedback.map(
+            (tip) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.check_circle_outline,
+                    size: 16,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      tip,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnalysisQualitySection(FaceAnalysisEntity result) {
+    return _buildSectionCard(
+      title: 'Analysis Quality',
+      icon: Icons.verified_outlined,
+      subtitle: 'Confidence and image coverage from multi-angle analysis.',
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildMetricPill(
+              icon: Icons.collections_outlined,
+              label: 'Images Used',
+              value: '${result.analysisQuality.imageCount}',
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _buildMetricPill(
+              icon: Icons.bolt,
+              label: 'Confidence',
+              value: '${result.analysisQuality.confidence}%',
+            ),
           ),
         ],
       ),
@@ -405,7 +501,10 @@ class _ResultScreenState extends State<ResultScreen>
           const SizedBox(height: 18),
           _buildScoreBar('Facial Harmony', result.facialHarmony.score),
           const SizedBox(height: 12),
-          _buildScoreBar('Overall Symmetry', result.overallSymmetry.round()),
+          _buildScoreBar(
+            'Overall Symmetry',
+            (result.overallSymmetry * 100).round(),
+          ),
           const SizedBox(height: 12),
           _buildScoreBar('Golden Ratio', goldenRatioScore),
           const SizedBox(height: 18),
@@ -675,17 +774,17 @@ class _ResultScreenState extends State<ResultScreen>
     final tiles = [
       _FeatureTileData(
         label: 'Eyes',
-        score: result.eyeSymmetry.round(),
+        score: (result.eyeSymmetry * 100).round(),
         icon: Icons.remove_red_eye_outlined,
       ),
       _FeatureTileData(
         label: 'Nose',
-        score: result.noseSymmetry.round(),
+        score: (result.noseSymmetry * 100).round(),
         icon: Icons.face_retouching_natural,
       ),
       _FeatureTileData(
         label: 'Mouth',
-        score: result.mouthSymmetry.round(),
+        score: (result.mouthSymmetry * 100).round(),
         icon: Icons.sentiment_satisfied_alt_outlined,
       ),
       _FeatureTileData(

@@ -12,9 +12,7 @@ class ProcessingScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const CircularProgressIndicator(
-              color: AppColors.primary,
-            ),
+            const CircularProgressIndicator(color: AppColors.primary),
             const SizedBox(height: 32),
             const Text(
               'Analyzing Face...',
@@ -22,7 +20,7 @@ class ProcessingScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Finding landmarks and calculating symmetry',
+              'Analyzing 3+ angles, stabilizing scores, and building intent-aware grooming guidance',
               style: AppTypography.bodyLarge.copyWith(
                 color: AppColors.textSecondaryLight,
               ),

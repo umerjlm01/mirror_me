@@ -1,8 +1,5 @@
 import 'dart:developer';
-import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rxdart/rxdart.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/utils/image_utils.dart';
 import 'package:mirror_me_app/features/glow_up/data/datasources/glow_up_local_data_source.dart';
@@ -14,73 +11,70 @@ import 'face_analysis_state.dart';
 class FaceAnalysisBloc extends Bloc<FaceAnalysisEvent, FaceAnalysisState> {
   final AnalyzeFaceUseCase analyzeFaceUseCase;
   final GlowUpLocalDataSource glowUpDataSource;
-  final ImagePicker _picker = ImagePicker();
   final _uuid = const Uuid();
-
-  final _selectedImageSubject = BehaviorSubject<File?>();
-  final _loadingSubject = BehaviorSubject<bool>.seeded(false);
-
-  Stream<File?> get selectedImageStream => _selectedImageSubject.stream;
-  Stream<bool> get loadingStream => _loadingSubject.stream;
 
   FaceAnalysisBloc({
     required this.analyzeFaceUseCase,
     required this.glowUpDataSource,
   }) : super(FaceAnalysisInitial()) {
-    on<UploadImageEvent>(_onUploadImage);
-    on<CaptureImageEvent>(_onCaptureImage);
     on<AnalyzeFaceEvent>(_onAnalyzeFace);
     on<ResetEvent>(_onReset);
     on<SaveGlowUpEntryEvent>(_onSaveGlowUpEntry);
   }
 
-  Future<void> _onUploadImage(UploadImageEvent event, Emitter<FaceAnalysisState> emit) async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      File file = File(pickedFile.path);
-      _selectedImageSubject.add(file);
-      add(AnalyzeFaceEvent(file));
-    }
-  }
-
-  Future<void> _onCaptureImage(CaptureImageEvent event, Emitter<FaceAnalysisState> emit) async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.camera);
-    if (pickedFile != null) {
-      File file = File(pickedFile.path);
-      _selectedImageSubject.add(file);
-      add(AnalyzeFaceEvent(file));
-    }
-  }
-
-  Future<void> _onAnalyzeFace(AnalyzeFaceEvent event, Emitter<FaceAnalysisState> emit) async {
+  Future<void> _onAnalyzeFace(
+    AnalyzeFaceEvent event,
+    Emitter<FaceAnalysisState> emit,
+  ) async {
     emit(FaceAnalysisLoading());
-    _loadingSubject.add(true);
 
     try {
-      final compressedFile = await ImageUtils.compressImage(event.imageFile);
-      final result = await analyzeFaceUseCase.execute(compressedFile);
+      if (event.imageFiles.length < 3) {
+        emit(
+          const FaceAnalysisError(
+            'Please select at least 3 images (front, slight left, slight right).',
+          ),
+        );
+        return;
+      }
 
-      result.fold(
-        (failure) {
+      final compressedFiles = await Future.wait(
+        event.imageFiles.map((file) => ImageUtils.compressImage(file)),
+      );
+
+      final result = await analyzeFaceUseCase.execute(
+        compressedFiles,
+        event.userIntent,
+      );
+      try {
+        result.fold((failure) {
           String errorMsg = failure.message;
-          if (errorMsg.contains('SocketException') || errorMsg.contains('timeout')) {
-            errorMsg = 'Connection timeout. Please check your internet and try again.';
+          if (errorMsg.contains('SocketException') ||
+              errorMsg.contains('timeout')) {
+            errorMsg =
+                'Connection timeout. Please check your internet and try again.';
           } else if (errorMsg.contains('No face detected')) {
-            errorMsg = 'No face detected. Please try with a clearer photo.';
+            errorMsg =
+                'No face detected in one or more images. Please try clearer photos.';
+          } else if (errorMsg.contains('At least 3 valid images')) {
+            errorMsg =
+                'At least 3 valid images are required. Use front, slight left, and slight right with good lighting.';
           }
           emit(FaceAnalysisError(errorMsg));
-        },
-        (success) => emit(FaceAnalysisSuccess(success)),
-      );
-    } catch (e) {
+          log("Error Message: $errorMsg ");
+        }, (success) => emit(FaceAnalysisSuccess(success)));
+      } catch (e, t) {
+        log("Error: $e, trace: $t");
+      }
+    } catch (e, t) {
       String errorMsg = 'Unexpected error occurred';
-      if (e.toString().contains('SocketException') || e.toString().contains('timeout')) {
-        errorMsg = 'Connection timeout. Please check your internet and try again.';
+      if (e.toString().contains('SocketException') ||
+          e.toString().contains('timeout')) {
+        errorMsg =
+            'Connection timeout. Please check your internet and try again.';
       }
       emit(FaceAnalysisError(errorMsg));
-      log("Error: $e");
-    } finally {
-      _loadingSubject.add(false);
+      log("Error: $e, trace: $t");
     }
   }
 
@@ -111,15 +105,6 @@ class FaceAnalysisBloc extends Bloc<FaceAnalysisEvent, FaceAnalysisState> {
   }
 
   void _onReset(ResetEvent event, Emitter<FaceAnalysisState> emit) {
-    _selectedImageSubject.add(null);
-    _loadingSubject.add(false);
     emit(FaceAnalysisInitial());
-  }
-
-  @override
-  Future<void> close() {
-    _selectedImageSubject.close();
-    _loadingSubject.close();
-    return super.close();
   }
 }

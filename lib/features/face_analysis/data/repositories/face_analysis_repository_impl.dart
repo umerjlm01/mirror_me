@@ -7,6 +7,7 @@ import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/network/api_service.dart';
 import '../../domain/entities/face_analysis_entity.dart';
+import '../../domain/entities/user_intent_entity.dart';
 import '../../domain/repositories/face_analysis_repository.dart';
 import '../datasources/face_local_data_source.dart';
 
@@ -21,15 +22,32 @@ class FaceAnalysisRepositoryImpl implements FaceAnalysisRepository {
 
   @override
   Future<Either<Failure, FaceAnalysisEntity>> analyzeFace(
-    File imageFile,
+    List<File> imageFiles,
+    UserIntentEntity userIntent,
   ) async {
     try {
-      final apiResponse = await apiService.analyzeFace(imageFile);
+      if (imageFiles.length < 3) {
+        return const Left(
+          ServerFailure(
+            'Please select at least 3 images (front, slight left, slight right).',
+          ),
+        );
+      }
+
+      final apiResponse = await apiService.analyzeFace(imageFiles, userIntent);
 
       // Check for errors in response
       if (apiResponse.containsKey('error')) {
         return Left(ServerFailure(apiResponse['error'] as String));
       }
+
+      final analysis = apiResponse['analysis'] as Map<String, dynamic>? ?? {};
+      final confidence =
+          apiResponse['confidence'] as Map<String, dynamic>? ?? {};
+      final analysisQualityRaw =
+          apiResponse['analysis_quality'] as Map<String, dynamic>? ?? {};
+      final userIntentRaw =
+          apiResponse['user_intent'] as Map<String, dynamic>? ?? {};
 
       // Extract raw data with safe null checking
       final symmetry = apiResponse['symmetry'] as Map<String, dynamic>? ?? {};
@@ -50,11 +68,22 @@ class FaceAnalysisRepositoryImpl implements FaceAnalysisRepository {
       final moodRaw = apiResponse['mood'] as Map<String, dynamic>? ?? {};
 
       // Extract grooming-focused fields
-      final faceShape = apiResponse['face_shape'] as String? ?? 'Oval';
+      final faceShape =
+          analysis['face_shape'] as String? ??
+          apiResponse['face_shape'] as String? ??
+          'Oval';
       final jawlineStrength =
-          (apiResponse['jawline_strength'] as num?)?.toInt() ?? 70;
+          (analysis['jawline'] as num?)?.toInt() ??
+          (apiResponse['jawline_strength'] as num?)?.toInt() ??
+          70;
       final groomingTips = List<String>.from(
-        (apiResponse['grooming_tips'] as List<dynamic>? ?? []).map(
+        (apiResponse['suggestions'] as List<dynamic>? ??
+                apiResponse['grooming_tips'] as List<dynamic>? ??
+                [])
+            .map((e) => e.toString()),
+      );
+      final intentFeedback = List<String>.from(
+        (apiResponse['intent_feedback'] as List<dynamic>? ?? []).map(
           (e) => e.toString(),
         ),
       );
@@ -75,7 +104,9 @@ class FaceAnalysisRepositoryImpl implements FaceAnalysisRepository {
       );
 
       // Parse symmetry scores
-      final overallSymmetry = _parsePercentage(symmetry['overall_score']);
+      final overallSymmetry = _parsePercentage(
+        analysis['symmetry'] ?? symmetry['overall_score'],
+      );
       final eyeSymmetry = _parsePercentage(symmetry['eye_symmetry']);
       final noseSymmetry = _parsePercentage(symmetry['nose_alignment']);
       final mouthSymmetry = _parsePercentage(symmetry['mouth_alignment']);
@@ -108,8 +139,19 @@ class FaceAnalysisRepositoryImpl implements FaceAnalysisRepository {
       );
 
       // Build facial harmony
-      final harmonyScore = ((eyeScore + noseScore + mouthScore) / 3).toInt();
-      final proportionScore = ((overallSymmetry * 100).toInt());
+      final harmonyScore =
+          (analysis['harmony'] as num?)?.toInt() ??
+          ((eyeScore + noseScore + mouthScore) / 3).toInt();
+      final proportionScore =
+          ((facePropsRaw['width_height_ratio'] as num?)?.toDouble() != null)
+          ? _clampInt(
+              ((1 - (((faceProportions.widthHeightRatio - 0.95).abs()) / 0.3)) *
+                      100)
+                  .toInt(),
+              0,
+              100,
+            )
+          : ((overallSymmetry * 100).toInt());
       final balanceScore =
           ((eyeSymmetry * 100 + noseSymmetry * 100 + mouthSymmetry * 100) ~/ 3);
 
@@ -153,15 +195,39 @@ class FaceAnalysisRepositoryImpl implements FaceAnalysisRepository {
 
       // Build analysis confidence
       final analysisConfidence = AnalysisConfidence(
-        matchReliability: 85,
-        landmarkQuality: 88,
+        matchReliability:
+            ((confidence['analysis_quality'] as num?)?.toInt() ??
+            (analysisQualityRaw['confidence'] as num?)?.toInt() ??
+            82),
+        landmarkQuality:
+            ((confidence['analysis_quality'] as num?)?.toInt() ??
+            (analysisQualityRaw['confidence'] as num?)?.toInt() ??
+            82),
       );
 
       // Build face alignment
       final alignment = FaceAlignment(
         eyesHorizontal: true,
         rotationDegrees: 0,
-        scaleScore: 90,
+        scaleScore:
+            ((confidence['analysis_quality'] as num?)?.toInt() ??
+            (analysisQualityRaw['confidence'] as num?)?.toInt() ??
+            85),
+      );
+
+      final analysisQuality = AnalysisQuality(
+        imageCount: (analysisQualityRaw['image_count'] as num?)?.toInt() ?? 1,
+        confidence:
+            (analysisQualityRaw['confidence'] as num?)?.toInt() ??
+            (confidence['analysis_quality'] as num?)?.toInt() ??
+            80,
+      );
+
+      final parsedIntent = UserIntentEntity(
+        goal: userIntentRaw['goal'] as String? ?? userIntent.goal,
+        preference:
+            userIntentRaw['preference'] as String? ?? userIntent.preference,
+        glasses: userIntentRaw['glasses'] as String? ?? userIntent.glasses,
       );
 
       // Save perfect faces to local files
@@ -190,7 +256,7 @@ class FaceAnalysisRepositoryImpl implements FaceAnalysisRepository {
 
       // Build entity
       final entity = FaceAnalysisEntity(
-        originalImage: imageFile,
+        originalImage: imageFiles.first,
         faceShape: faceShape,
         jawlineStrength: jawlineStrength,
         faceProportions: faceProportions,
@@ -210,6 +276,9 @@ class FaceAnalysisRepositoryImpl implements FaceAnalysisRepository {
         mood: mood,
         analysisConfidence: analysisConfidence,
         alignment: alignment,
+        analysisQuality: analysisQuality,
+        userIntent: parsedIntent,
+        intentFeedback: intentFeedback,
         alignedFace: alignedFile,
         leftPerfectFace: leftFile,
         rightPerfectFace: rightFile,
@@ -268,6 +337,12 @@ class FaceAnalysisRepositoryImpl implements FaceAnalysisRepository {
         'mood_confidence': result.mood.confidence,
         'match_reliability': result.analysisConfidence.matchReliability,
         'landmark_quality': result.analysisConfidence.landmarkQuality,
+        'analysis_quality': result.analysisQuality.confidence,
+        'analysis_image_count': result.analysisQuality.imageCount,
+        'intent_goal': result.userIntent.goal,
+        'intent_preference': result.userIntent.preference,
+        'intent_glasses': result.userIntent.glasses,
+        'intent_feedback': result.intentFeedback,
         'feature_scores': result.featureScores,
       });
       await localDataSource.cacheLastAnalysisSnapshot(snapshot);
